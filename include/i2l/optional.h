@@ -1,5 +1,5 @@
-#ifndef XPAS_OPTIONAL_H
-#define XPAS_OPTIONAL_H
+#ifndef I2L_OPTIONAL_H
+#define I2L_OPTIONAL_H
 
 #if __has_include(<optional>)
 #include <optional>
@@ -11,4 +11,4 @@ using std::experimental::optional;
 using std::experimental::nullopt;
 #endif
 
-#endif //XPAS_OPTIONAL_H
+#endif

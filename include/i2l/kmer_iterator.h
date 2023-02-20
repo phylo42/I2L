@@ -1,5 +1,5 @@
-#ifndef XPAS_KMER_ITERATOR_H
-#define XPAS_KMER_ITERATOR_H
+#ifndef I2L_KMER_ITERATOR_H
+#define I2L_KMER_ITERATOR_H
 
 #include <string_view>
 #include <vector>

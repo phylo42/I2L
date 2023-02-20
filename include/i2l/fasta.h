@@ -54,7 +54,7 @@ namespace i2l::io
 
             std::string _header;
 
-            /// Indicates if we need to clean sequences on-the-fly with xcl::clean_sequence
+            /// Indicates if we need to clean sequences on-the-fly with i2l::clean_sequence
             bool _clean_sequences;
         };
     }

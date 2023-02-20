@@ -1,9 +1,9 @@
-#ifndef XPAS_VERSION_H
-#define XPAS_VERSION_H
+#ifndef I2L_VERSION_H
+#define I2L_VERSION_H
 
 namespace i2l
 {
-    /// \brief xpas version class. Follows the rules of semantic versioning 2.0.
+    /// \brief IPK version class. Follows the rules of semantic versioning 2.0.
     /// \sa Semantic versioning 2.0: https://semver.org/
     /// TODO: fill this automatically with the CMakeLists.txt definitions
     struct version
@@ -28,4 +28,4 @@ namespace i2l
 
 }
 
-#endif // XPAS_VERSION_H
+#endif

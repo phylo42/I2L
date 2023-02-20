@@ -1,5 +1,5 @@
-#ifndef XPAS_PHYLO_TREE_H
-#define XPAS_PHYLO_TREE_H
+#ifndef I2L_PHYLO_TREE_H
+#define I2L_PHYLO_TREE_H
 
 #include <i2l/optional.h>
 #include <i2l/phylo_kmer.h>

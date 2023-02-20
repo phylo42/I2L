@@ -1,5 +1,5 @@
-#ifndef XPAS_NEWICK_H
-#define XPAS_NEWICK_H
+#ifndef I2L_NEWICK_H
+#define I2L_NEWICK_H
 
 #include <string>
 #include <string_view>
@@ -28,4 +28,4 @@ namespace i2l::io
 /// (label:branch_length{node_postorder_id}, ...)
 std::ostream& operator<<(std::ostream& out, const i2l::phylo_tree& tree);
 
-#endif //RAPPAS_CORE_NEWICK_H
+#endif

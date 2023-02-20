@@ -1,5 +1,5 @@
-#ifndef XPAS_PHYLO_KMER_DB_H
-#define XPAS_PHYLO_KMER_DB_H
+#ifndef I2L_PHYLO_KMER_DB_H
+#define I2L_PHYLO_KMER_DB_H
 
 #include "hash_map.h"
 #include "phylo_kmer.h"

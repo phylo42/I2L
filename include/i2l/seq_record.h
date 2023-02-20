@@ -1,5 +1,5 @@
-#ifndef XPAS_BUILD_SEQ_RECORD_H
-#define XPAS_BUILD_SEQ_RECORD_H
+#ifndef I2L_SEQ_RECORD_H
+#define I2L_SEQ_RECORD_H
 
 #include <string>
 
@@ -26,4 +26,4 @@ namespace i2l
     };
 
 }
-#endif //XPAS_BUILD_SEQ_RECORD_H
+#endif

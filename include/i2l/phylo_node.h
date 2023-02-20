@@ -1,5 +1,5 @@
-#ifndef XPAS_BUILD_PHYLO_NODE_H
-#define XPAS_BUILD_PHYLO_NODE_H
+#ifndef I2L_PHYLO_NODE_H
+#define I2L_PHYLO_NODE_H
 
 #include <string>
 #include <vector>
@@ -129,4 +129,4 @@ namespace i2l
     };
 
 }
-#endif //XPAS_BUILD_PHYLO_NODE_H
+#endif

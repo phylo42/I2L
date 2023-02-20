@@ -1,10 +1,10 @@
-#ifndef XPAS_PHYLO_KMER_H
-#define XPAS_PHYLO_KMER_H
+#ifndef I2L_PHYLO_KMER_H
+#define I2L_PHYLO_KMER_H
 
-#include "seq.h"
 #include <limits>
 #include <string>
 #include "optional.h"
+#include "seq.h"
 
 namespace i2l
 {

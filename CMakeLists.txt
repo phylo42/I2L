@@ -26,7 +26,7 @@ set(SOURCES
 set(LINK_LIBRARIES
         Boost::serialization Boost::iostreams Boost::system Boost::filesystem
         ZLIB::ZLIB
-        ${HASH_MAP_IMPLEMENTATION})
+        tsl::hopscotch_map)
 
 set(INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
@@ -50,7 +50,6 @@ target_compile_options(i2l_aa PRIVATE ${COMPILE_OPTIONS})
 target_compile_features(i2l_aa PUBLIC ${COMPILE_FEATURES})
 target_compile_definitions(i2l_aa
         PUBLIC
-        ${HASH_MAP}
         SEQ_TYPE_AA)
 
 ###########################################################################################
@@ -66,7 +65,6 @@ target_compile_options(i2l_aa_pos PRIVATE ${COMPILE_OPTIONS})
 target_compile_features(i2l_aa_pos PUBLIC ${COMPILE_FEATURES})
 target_compile_definitions(i2l_aa_pos
         PUBLIC
-            ${HASH_MAP}
             SEQ_TYPE_AA
             KEEP_POSITIONS)
 
@@ -84,7 +82,6 @@ target_compile_features(i2l_dna PUBLIC ${COMPILE_FEATURES})
 set_property(TARGET i2l_dna PROPERTY CXX_STANDARD 17)
 target_compile_definitions(i2l_dna
         PUBLIC
-            ${HASH_MAP}
             SEQ_TYPE_DNA)
 
 ######################################################################################################
@@ -117,7 +114,7 @@ install(TARGETS i2l_dna
 #        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #export(TARGETS i2l_dna i2l_aa ${HASH_MAP_EXPORT}
-export(TARGETS i2l_dna ${HASH_MAP_EXPORT}
+export(TARGETS i2l_dna hopscotch_map #${HASH_MAP_EXPORT}
        FILE ${CMAKE_BINARY_DIR}/i2lConfig.cmake)
 
 export(PACKAGE i2l)
