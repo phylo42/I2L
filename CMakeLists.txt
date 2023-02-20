@@ -5,6 +5,8 @@ find_package(Boost REQUIRED COMPONENTS serialization iostreams system filesystem
 find_package(ZLIB)
 
 add_subdirectory(third-party)
+add_subdirectory(tests)
+add_subdirectory(examples)
 
 set(SOURCES
         src/i2l/fasta.cpp include/i2l/fasta.h

@@ -1,6 +1,6 @@
-[submodule "third-party/robin-map"]
-	path = third-party/robin-map
-	url = https://github.com/Tessil/robin-map/
 [submodule "third-party/hopscotch-map"]
 	path = third-party/hopscotch-map
 	url = https://github.com/Tessil/hopscotch-map
+[submodule "third-party/catch2"]
+	path = tests/catch2
+	url = https://github.com/catchorg/Catch2
