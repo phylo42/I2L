@@ -8,7 +8,7 @@ add_subdirectory(stats)
 add_subdirectory(kmers)
 add_subdirectory(tree)
 
-add_custom_target(examples
+add_custom_target(i2l_examples
         DEPENDS
             i2l_example_aa
             i2l_example_basic
