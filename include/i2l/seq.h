@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <vector>
+#include <stdexcept>
 #include "optional.h"
 
 namespace i2l
