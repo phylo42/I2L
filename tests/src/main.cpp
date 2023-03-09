@@ -260,6 +260,33 @@ TEST_CASE("i2l::io::parse_newick", "[tree]")
     REQUIRE(tree.get_node_count() == 7);
 }
 
+TEST_CASE("i2l::io::parse_newick complex labels", "[tree]")
+{
+    std::string newick = "('A':0.1,'B is complex':0.2,('C, (C is complex, really)':0.3,'D does not make sense,,,((((':0.4)E:0.5)F;";
+    /// labels in the DFS post-order
+    const std::vector<std::string> labels = { "A", "B is complex",
+                                              "C, (C is complex, really)",
+                                              "D does not make sense,,,((((", "E", "F"};
+    /// branch lengths in the DFS post-order
+    const std::vector<double> lengths = { 0.1, 0.2, 0.3, 0.4, 0.5, 0.0 };
+
+    auto tree = i2l::io::parse_newick(newick);
+
+    /// iterate over nodes and check if the labels and branch lengths are correct
+    size_t i = 0;
+    for (auto& node : tree)
+    {
+        REQUIRE(node.get_label() == labels[i]);
+
+        REQUIRE(Approx(node.get_branch_length()) == lengths[i]);
+
+        ++i;
+    }
+
+    REQUIRE(tree.get_node_count() == 6);
+}
+
+
 TEST_CASE("i2l::impl::next_by_postorder", "[tree]")
 {
     std::string newick = "((A:0.05,B:0.1):0.15,(C:0.2,D:0.25):0.3):0.35;";

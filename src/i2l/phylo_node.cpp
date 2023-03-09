@@ -55,7 +55,7 @@ void phylo_node::set_label(const std::string& label)
 
 phylo_node* phylo_node::get_parent() const noexcept
 {
-    return _parent;
+     return _parent;
 }
 
 void phylo_node::set_parent(phylo_node* parent)

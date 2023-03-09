@@ -37,6 +37,9 @@ namespace i2l::io
         /// \param ch A character to parse
         void _parse_character(char ch);
 
+        /// \brief Handles the quote character
+        void _handle_quote();
+
         /// \brief Handles a left parenthesis in input data.
         /// \details A left parenthesis indicates that a new node with children should be created.
         /// We will create it later though, during the _handle_right_parenthesis call
@@ -69,6 +72,7 @@ namespace i2l::io
 
         bool _parsing_node;
         bool _end_of_file;
+        bool _parsing_text;
     };
 }
 
@@ -76,6 +80,7 @@ newick_parser::newick_parser()
     : _root{ nullptr }
     , _parsing_node{ false }
     , _end_of_file{ false }
+    , _parsing_text{ false }
 {}
 
 void newick_parser::parse(string_view data)
@@ -98,24 +103,39 @@ phylo_node* newick_parser::get_root() const
 
 void newick_parser::_parse_character(char ch)
 {
-    switch (ch)
+    if (_parsing_text && ch != '\'')
     {
-        case '(':
-            _handle_left_parenthesis();
-            break;
-        case ')':
-            _handle_right_parenthesis();
-            break;
-        case ',':
-            _handle_comma();
-            break;
-        case ';':
-            _handle_semicolon();
-            break;
-        default:
-            _handle_text(ch);
-            break;
+        _handle_text(ch);
     }
+    else
+    {
+        switch (ch)
+        {
+            case '\'':
+                _handle_quote();
+                break;
+            case '(':
+                _handle_left_parenthesis();
+                break;
+            case ')':
+                _handle_right_parenthesis();
+                break;
+            case ',':
+                _handle_comma();
+                break;
+            case ';':
+                _handle_semicolon();
+                break;
+            default:
+                _handle_text(ch);
+                break;
+        }
+    }
+}
+
+void newick_parser::_handle_quote()
+{
+    _parsing_text = !_parsing_text;
 }
 
 void newick_parser::_handle_left_parenthesis()
