@@ -262,11 +262,11 @@ TEST_CASE("i2l::io::parse_newick", "[tree]")
 
 TEST_CASE("i2l::io::parse_newick complex labels", "[tree]")
 {
-    std::string newick = "('A':0.1,'B is complex':0.2,('C, (C is complex, really)':0.3,'D does not make sense,,,((((':0.4)E:0.5)F;";
+    std::string newick = "('A':0.1,'B is complex':0.2,('C, (C is complex, really)':0.3,'D does not make sense;,,, :( :( :(':0.4)E:0.5)F;";
     /// labels in the DFS post-order
     const std::vector<std::string> labels = { "A", "B is complex",
                                               "C, (C is complex, really)",
-                                              "D does not make sense,,,((((", "E", "F"};
+                                              "D does not make sense;,,, :( :( :(", "E", "F"};
     /// branch lengths in the DFS post-order
     const std::vector<double> lengths = { 0.1, 0.2, 0.3, 0.4, 0.5, 0.0 };
 

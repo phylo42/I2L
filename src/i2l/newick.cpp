@@ -208,19 +208,18 @@ void newick_parser::_parse_node_text()
     // the content can be like "node_label:branch_length", ":branch_length", "node_label" or just ""
     if (!_node_text.empty())
     {
-        using tokenizer = boost::tokenizer<boost::char_separator<char>>;
-        tokenizer tokens(_node_text, boost::char_separator<char>(":"));
-        auto it = begin(tokens);
+        const auto found = _node_text.find_last_of(':');
 
         // if node label presented
         if (!boost::starts_with(_node_text, ":"))
         {
-            current_node->set_label(*(it++));
+            current_node->set_label(_node_text.substr(0, found));
         }
 
-        if (it != end(tokens))
+        if (found != std::string::npos)
         {
-            current_node->set_branch_length(std::stof(*it));
+            const auto len_str = _node_text.substr(found + 1);
+            current_node->set_branch_length(std::stof(len_str));
         }
     }
 
