@@ -18,23 +18,23 @@ namespace i2l
     /// A struct with definitions for different version of the serialization protocol
     struct protocol
     {
-        /// xpas v0.1.x
+        /// IPK v0.1.x
         static const unsigned int v0_1_x = 2;
 
-        /// xpas v0.2.x + v0.3.1
+        /// IPK v0.2.x + v0.3.1
         static const unsigned int v0_2_WITHOUT_POSITIONS = 3;
         static const unsigned int v0_2_WITH_POSITIONS = 4;
 
-        /// xpas v0.3.2, added tree indexing
-        static const unsigned int v0_3_2_WITHOUT_POSITIONS = 5;
-        static const unsigned int v0_3_2_WITH_POSITIONS = 6;
+        /// IPK v0.4.0, added tree indexing
+        static const unsigned int v0_4_0_WITHOUT_POSITIONS = 5;
+        static const unsigned int v0_4_0_WITH_POSITIONS = 6;
 
 #ifdef KEEP_POSITIONS
-        static const unsigned int EARLIEST_INDEX = v0_3_2_WITH_POSITIONS;
-        static const unsigned int CURRENT = v0_3_2_WITH_POSITIONS;
+        static const unsigned int EARLIEST_INDEX = v0_4_0_WITH_POSITIONS;
+        static const unsigned int CURRENT = v0_4_0_WITH_POSITIONS;
 #else
-        static const unsigned int EARLIEST_INDEX = v0_3_2_WITHOUT_POSITIONS;
-        static const unsigned int CURRENT = v0_3_2_WITHOUT_POSITIONS;
+        static const unsigned int EARLIEST_INDEX = v0_4_0_WITHOUT_POSITIONS;
+        static const unsigned int CURRENT = v0_4_0_WITHOUT_POSITIONS;
 #endif
     };
 
@@ -243,8 +243,8 @@ namespace boost::serialization
             db.set_sequence_type(std::move(sequence_type));
         }
 
-        /// Deserialization of the tree index, v0.3.2 and later
-        if (version >= i2l::protocol::v0_3_2_WITHOUT_POSITIONS)
+        /// Deserialization of the tree index, v0.4.0 and later
+        if (version >= i2l::protocol::v0_4_0_WITHOUT_POSITIONS)
         {
             std::vector<i2l::phylo_node::node_index> tree_index = load_tree_index(ar);
             db.set_tree_index(std::move(tree_index));
@@ -294,7 +294,7 @@ namespace boost::serialization
         /// Early versions are not supported
         if (version < i2l::protocol::v0_1_x)
         {
-            throw std::runtime_error("Failed to load database: this database was built with older version of xpas.");
+            throw std::runtime_error("Failed to load database: this database was built with older version of IPK.");
         }
 
         db.set_positions_loaded(false);
@@ -308,7 +308,7 @@ namespace boost::serialization
         }
 
         /// Deserialization of the tree index, v0.3.2 and later
-        if (version >= i2l::protocol::v0_3_2_WITHOUT_POSITIONS)
+        if (version >= i2l::protocol::v0_4_0_WITHOUT_POSITIONS)
         {
             auto tree_index = load_tree_index(ar);
             db.set_tree_index(std::move(tree_index));

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-project(I2L LANGUAGES CXX VERSION 0.1.0)
+project(I2L LANGUAGES CXX VERSION 0.4.0)
 
 find_package(Boost REQUIRED COMPONENTS serialization iostreams system filesystem)
 find_package(ZLIB)

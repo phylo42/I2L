@@ -9,8 +9,8 @@ namespace i2l
     struct version
     {
         static constexpr auto major = "0";
-        static constexpr auto minor = "3";
-        static constexpr auto revision = "1";
+        static constexpr auto minor = "4";
+        static constexpr auto revision = "0";
 
         /// \brief Returns the core version number as a string
         static std::string as_string()
