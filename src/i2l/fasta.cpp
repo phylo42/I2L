@@ -88,11 +88,11 @@ void impl::fasta_iterator::_read_batch()
                 ++i;
                 if (_clean_sequences)
                 {
-                    _seqs.emplace_back(move(_header), clean_sequence(sequence));
+                    _seqs.emplace_back(_header, unalign(sequence));
                 }
                 else
                 {
-                    _seqs.emplace_back(move(_header), move(sequence));
+                    _seqs.emplace_back(_header, remove_whitespaces(sequence));
                 }
 
                 sequence = "";
@@ -110,14 +110,15 @@ void impl::fasta_iterator::_read_batch()
     /// if eof, it was the last batch
     if (i < _batch_size)
     {
+
         /// do not forget the last sequence
         if (_clean_sequences)
         {
-            _seqs.emplace_back(move(_header), clean_sequence(sequence));
+            _seqs.emplace_back(_header, unalign(sequence));
         }
         else
         {
-            _seqs.emplace_back(move(_header), move(sequence));
+            _seqs.emplace_back(_header, remove_whitespaces(sequence));
         }
         _last_batch = true;
         _batch_size = i + 1;
@@ -140,11 +141,18 @@ read_fasta::const_iterator read_fasta::end() const
     return { _filename, 0, false };
 }
 
-string i2l::io::clean_sequence(string sequence)
+string i2l::io::remove_whitespaces(string sequence)
+{
+    sequence.erase(
+        std::remove_if(sequence.begin(), sequence.end(), [](unsigned char x){ return x == ' '; }), sequence.end());
+    return sequence;
+}
+
+string i2l::io::unalign(string sequence)
 {
     sequence.erase(
         std::remove_if(sequence.begin(), sequence.end(),
-                       [](unsigned char x){ return x == '-' || x == '.' || x == '!' || x == '*'; }),
+                       [](unsigned char x){ return x == '-' || x == '.' || x == '!' || x == '*' || x == ' '; }),
         sequence.end());
     return sequence;
 }

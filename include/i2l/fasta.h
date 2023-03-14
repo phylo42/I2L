@@ -81,7 +81,9 @@ namespace i2l::io
 
     /// Clean an input sequence from gaps. Characters '*', '!', '.' are also skipped
     /// and ignored
-    std::string clean_sequence(std::string sequence);
+    std::string unalign(std::string sequence);
+
+    std::string remove_whitespaces(std::string sequence);
 }
 
 
