@@ -7,6 +7,7 @@
 #include <i2l/phylo_tree.h>
 #include <i2l/newick.h>
 #include <iomanip>
+#include <sstream>
 
 using std::string, std::string_view;
 using namespace i2l;
