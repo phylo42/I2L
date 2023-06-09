@@ -3,6 +3,7 @@
 #include <i2l/newick.h>
 #include <boost/filesystem.hpp>
 #include <algorithm>
+#include <fstream>
 
 namespace fs = boost::filesystem;
 using namespace i2l;
