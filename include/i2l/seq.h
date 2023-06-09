@@ -1,6 +1,7 @@
 #ifndef I2L_SEQ_H
 #define I2L_SEQ_H
 
+#include <string>
 #include <cstdint>
 #include <cstddef>
 #include <vector>
