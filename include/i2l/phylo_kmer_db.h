@@ -196,6 +196,15 @@ namespace i2l
             _map[key].push_back(value);
         }
 
+        void sort()
+        {
+            for (auto& [key, scores] : _map)
+            {
+                std::sort(_map[key].begin(), _map[key].end(),
+                          [](auto pk1, auto pk2) { return pk1.branch < pk2.branch; });
+            }
+        }
+
         /// Returns the serialation protocol version
         [[nodiscard]]
         unsigned int version() const noexcept
@@ -207,6 +216,7 @@ namespace i2l
         {
             _version = version;
         }
+
 
     private:
         storage _map;
