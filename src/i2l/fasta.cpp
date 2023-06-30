@@ -12,8 +12,9 @@ using std::move;
 //------------------------------------------------------------------------------------
 
 impl::fasta_iterator::fasta_iterator(const std::string& filename, size_t batch_size, bool clean_sequences)
-    : _mmap{ filename }
-    , _is{ _mmap, std::ios::in }
+    //: _mmap{ filename }
+    //, _is{ _mmap, std::ios::in }
+    : _is{ filename, std::ios::in }
     , _batch_size{ batch_size }
     , _seq_id{ 0 }
     , _global_seq_id{ 0 }

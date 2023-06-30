@@ -2,9 +2,10 @@
 #define I2L_FASTA_H
 
 
-#include <boost/iostreams/device/mapped_file.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/algorithm/string/predicate.hpp>
+//#include <boost/iostreams/device/mapped_file.hpp>
+//#include <boost/iostreams/stream.hpp>
+//#include <boost/algorithm/string/predicate.hpp>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <i2l/seq_record.h>
@@ -13,7 +14,7 @@ namespace i2l::io
 {
     namespace impl
     {
-        namespace bio = boost::iostreams;
+        //namespace bio = boost::iostreams;
 
         /// Fasta file iterator, implements batch sequence reading.
         /// WARNING: Returns references to sequences stored in the iterator.
@@ -39,8 +40,9 @@ namespace i2l::io
         private:
             void _read_batch();
 
-            bio::mapped_file_source _mmap;
-            bio::stream<bio::mapped_file_source> _is;
+            //bio::mapped_file_source _mmap;
+            //bio::stream<bio::mapped_file_source> _is;
+            std::ifstream _is;
 
             /// current batch of sequences
             std::vector<seq_record> _seqs;
