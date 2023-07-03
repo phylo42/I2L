@@ -12,15 +12,17 @@
 
 namespace i2l::io
 {
+    class batch_fasta;
+
     namespace impl
     {
         //namespace bio = boost::iostreams;
 
-        /// Fasta file iterator, implements batch sequence reading.
-        /// WARNING: Returns references to sequences stored in the iterator.
-        /// Do not keep these references after usage.
+        /// An efficient iterator over fasta files. Implements batched reading.
+        /// Returns references to sequences stored in the iterator.
         class fasta_iterator
         {
+            friend class i2l::io::batch_fasta;
         public:
             using value_type = const i2l::seq_record&;
 
@@ -61,9 +63,9 @@ namespace i2l::io
         };
     }
 
-    /// Reads fasta file in batches. Cleans the sequences with clean_sequence
+    /// Efficiently iterates over sequences of a fasta file. Unaligns sequences if needed
     /// Usage:
-    ///     for (const auto& seq: xcl::io::read_fasta(filename)) { ... }
+    ///     for (const auto& seq: i2l::io::read_fasta(filename)) { ... }
     class read_fasta
     {
         using const_iterator = impl::fasta_iterator;
@@ -79,6 +81,18 @@ namespace i2l::io
         std::string _filename;
         size_t _batch_size;
         bool _clean_sequences;
+    };
+
+    /// Efficiently reads batches of fasta sequences. Unaligns sequences if needed
+    class batch_fasta
+    {
+        using const_iterator = impl::fasta_iterator;
+    public:
+        batch_fasta(const std::string& filename, size_t batch_size = 1024, bool clean_sequences = true);
+
+        std::vector<seq_record> next_batch();
+    private:
+        impl::fasta_iterator _it;
     };
 
     /// Clean an input sequence from gaps. Characters '*', '!', '.' are also skipped
