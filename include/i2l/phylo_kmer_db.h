@@ -17,6 +17,16 @@ namespace i2l
         class search_result<unpositioned_phylo_kmer>;
     }
 
+    struct kmer_fv
+    {
+        i2l::phylo_kmer::key_type key;
+        float filter_value;
+
+        kmer_fv(i2l::phylo_kmer::key_type k, float fv)
+            : key(k), filter_value(fv)
+        {}
+    };
+
     /// \brief A phylo-kmer database that stores all phylo-kmers.
     template <typename PhyloKmer>
     class _phylo_kmer_db
@@ -41,6 +51,7 @@ namespace i2l
             , _sequence_type(std::move(seq_type))
             , _tree(std::move(tree))
             , _version(0)
+            , _mu(1)
         {}
         _phylo_kmer_db(const _phylo_kmer_db&) noexcept = delete;
         _phylo_kmer_db(_phylo_kmer_db&&) noexcept = default;
@@ -217,6 +228,19 @@ namespace i2l
             _version = version;
         }
 
+        void set_mu(float mu)
+        {
+            _mu = mu;
+        }
+
+        float get_mu()
+        {
+            return _mu;
+        }
+
+        /// An array of pairs (kmer, filter value). Should be sorted by filter value.
+        /// Determines the order in which k-mers are serialized.
+        std::vector<kmer_fv> kmer_order;
 
     private:
         storage _map;
@@ -253,6 +277,9 @@ namespace i2l
 
         /// Serialization protocol version
         unsigned int _version;
+
+        /// The proportion of phylo-k-mers that have been loaded
+        float _mu;
     };
 
     using phylo_kmer_db = _phylo_kmer_db<phylo_kmer>;
@@ -286,6 +313,12 @@ namespace i2l
             const_iterator end() const noexcept
             {
                 return _end;
+            }
+
+            [[nodiscard]]
+            size_t size() const noexcept
+            {
+                return std::distance(_begin, _end);
             }
         private:
             const_iterator _begin;

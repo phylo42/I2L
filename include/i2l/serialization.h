@@ -23,22 +23,28 @@ namespace i2l
 
         /// IPK v0.2.x + v0.3.1
         static const unsigned int v0_2_WITHOUT_POSITIONS = 3;
-        static const unsigned int v0_2_WITH_POSITIONS = 4;
+        static const unsigned int v0_2_WITH_POSITIONS = v0_2_WITHOUT_POSITIONS + 1;
 
         /// IPK v0.4.0, added tree indexing
         static const unsigned int v0_4_0_WITHOUT_POSITIONS = 5;
-        static const unsigned int v0_4_0_WITH_POSITIONS = 6;
+        static const unsigned int v0_4_0_WITH_POSITIONS = v0_4_0_WITHOUT_POSITIONS + 1;
+
+        /// IPK v0.4.1, added kmer ordering and filter values
+        static const unsigned int v0_4_1_WITHOUT_POSITIONS = 7;
+        static const unsigned int v0_4_1_WITH_POSITIONS = v0_4_1_WITHOUT_POSITIONS + 1;
 
 #ifdef KEEP_POSITIONS
         static const unsigned int EARLIEST_INDEX = v0_4_0_WITH_POSITIONS;
-        static const unsigned int CURRENT = v0_4_0_WITH_POSITIONS;
+        static const unsigned int CURRENT = v0_4_1_WITH_POSITIONS;
 #else
         static const unsigned int EARLIEST_INDEX = v0_4_0_WITHOUT_POSITIONS;
-        static const unsigned int CURRENT = v0_4_0_WITHOUT_POSITIONS;
+        static const unsigned int CURRENT = v0_4_1_WITHOUT_POSITIONS;
+        static const unsigned int CURRENT_WITH_POSITIONS = CURRENT + 1;
+
 #endif
     };
 
-    i2l::phylo_kmer_db load_compressed(const std::string& filename)
+    i2l::phylo_kmer_db load_compressed(const std::string& filename, float user_mu, float user_omega)
     {
         std::ifstream ifs(filename);
         boost::iostreams::filtering_istream in;
@@ -48,23 +54,27 @@ namespace i2l
 
         boost::archive::binary_iarchive ia(in);
 
-        i2l::phylo_kmer_db db { 0, 0.0, "", "" };
+        i2l::phylo_kmer_db db { 0, user_omega, "", "" };
+        db.set_mu(user_mu);
+
         ia & db;
         return db;
     }
 
-    i2l::phylo_kmer_db load_uncompressed(const std::string& filename)
+    i2l::phylo_kmer_db load_uncompressed(const std::string& filename, float user_mu, float user_omega)
     {
         std::ifstream ifs(filename);
         boost::archive::binary_iarchive ia(ifs);
 
-        i2l::phylo_kmer_db db { 0, 0.0, "", "" };
+        i2l::phylo_kmer_db db { 0, user_omega, "", "" };
+        db.set_mu(user_mu);
+
         ia & db;
         return db;
     }
 
 
-    i2l::phylo_kmer_db load(const std::string& filename)
+    i2l::phylo_kmer_db load(const std::string& filename, float mu, float user_epsilon)
     {
         if (!fs::exists(filename))
         {
@@ -76,11 +86,11 @@ namespace i2l
         /// than to just try to decompress first.
         try
         {
-            return load_compressed(filename);
+            return load_compressed(filename, mu, user_epsilon);
         }
         catch (const boost::iostreams::zlib_error& error)
         {
-            return load_uncompressed(filename);
+            return load_uncompressed(filename, mu, user_epsilon);
         }
     }
 
@@ -119,6 +129,15 @@ namespace i2l
 
 namespace boost::serialization
 {
+    template<class T, class K>
+    void found_or_die(const T& optional, const K& key)
+    {
+        if (!optional)
+        {
+            throw std::runtime_error("Error while serializing " + std::to_string(key) + ". K-mer not found");
+        }
+    }
+
     template<class Archive>
     inline void save(Archive& ar,
                      const i2l::_phylo_kmer_db<i2l::positioned_phylo_kmer>& db,
@@ -143,17 +162,46 @@ namespace boost::serialization
         i2l::phylo_kmer::score_type omega = db.omega();
         ar & omega;
 
+        /// Save the total information value
+        double total_information = 0.0;
+        for (const auto& [kmer, fv] : db.kmer_order)
+        {
+            (void)kmer;
+            total_information += fv;
+        }
+        ar & total_information;
+
         size_t table_size = db.size();
         ar & table_size;
 
-        for (const auto& [key, entries] : db)
+        if (!db.kmer_order.empty())
         {
-            size_t entries_size = entries.size();
-            ar & key & entries_size;
-
-            for (const auto& [branch, score, position] : entries)
+            /// Phylo-k-mers order by Mutual Information
+            for (const auto& [ key, filter_value ] : db.kmer_order)
             {
-                ar & branch & score & position;
+                const auto entries = db.search(key);
+                found_or_die(entries, key);
+
+                size_t entries_size = entries->size();
+                ar & key & entries_size & filter_value;
+
+                for (const auto& [branch, score, position]: *entries)
+                {
+                    ar & branch & score & position;
+                }
+            }
+        }
+        else
+        {
+            for (const auto& [key, entries]: db)
+            {
+                size_t entries_size = entries.size();
+                ar & key & entries_size;
+
+                for (const auto& [branch, score, position]: entries)
+                {
+                    ar & branch & score & position;
+                }
             }
         }
     }
@@ -184,19 +232,48 @@ namespace boost::serialization
         i2l::phylo_kmer::score_type omega = db.omega();
         ar & omega;
 
+        /// Save the total information value
+        double total_information = 0.0;
+        for (const auto& [kmer, fv] : db.kmer_order)
+        {
+            (void)kmer;
+            total_information += fv;
+        }
+        ar & total_information;
+
         /// The number of different k-mers
         size_t table_size = db.size();
         ar & table_size;
 
-        /// Phylo-k-mers
-        for (const auto& [key, entries] : db)
+        if (!db.kmer_order.empty())
         {
-            size_t entries_size = entries.size();
-            ar & key & entries_size;
-
-            for (const auto& [branch, score] : entries)
+            /// Phylo-k-mers order by Mutual Information
+            for (const auto& [ key, filter_value ] : db.kmer_order)
             {
-                ar & branch & score;
+                const auto entries = db.search(key);
+                found_or_die(entries, key);
+
+                size_t entries_size = entries->size();
+                ar & key & entries_size & filter_value;
+
+                for (const auto& [branch, score] : *entries)
+                {
+                    ar & branch & score;
+                }
+            }
+        }
+        else
+        {
+            /// Phylo-k-mers unordered
+            for (const auto& [key, entries] : db)
+            {
+                size_t entries_size = entries.size();
+                ar & key & entries_size;
+
+                for (const auto& [branch, score] : entries)
+                {
+                    ar & branch & score;
+                }
             }
         }
     }
@@ -260,9 +337,25 @@ namespace boost::serialization
             ar & kmer_size;
             db.set_kmer_size(kmer_size);
 
+            /// Ignore omega if we want to dynamic load
+            if (version < i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
+            {
+                i2l::phylo_kmer::score_type omega = 0;
+                ar & omega;
+                db.set_omega(omega);
+            }
+
             i2l::phylo_kmer::score_type omega = 0;
             ar & omega;
             db.set_omega(omega);
+
+            /// Load the total information
+            double total_information = 0.0f;
+            (void)total_information;
+            if (version >= i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
+            {
+                ar & total_information;
+            }
 
             size_t table_size = 0;
             ar & table_size;
@@ -322,34 +415,92 @@ namespace boost::serialization
         ar & kmer_size;
         db.set_kmer_size(kmer_size);
 
-        i2l::phylo_kmer::score_type omega = 0;
-        ar & omega;
-        db.set_omega(omega);
+        /// Ignore omega if we want to dynamic load
+        if (version < i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
+        {
+            i2l::phylo_kmer::score_type omega = 0;
+            ar & omega;
+            db.set_omega(omega);
+        }
+
+        /// Load the total information
+        double total_information = 0.0f;
+        (void)total_information;
+        if (version >= i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
+        {
+            ar & total_information;
+        }
 
         size_t table_size = 0;
         ar & table_size;
-        for (size_t i = 0; i < table_size; ++i)
-        {
-            auto key = i2l::phylo_kmer::na_key;
-            size_t entries_size = 0;
-            ar & key;
-            ar & entries_size;
-            for (size_t j = 0; j < entries_size; ++j)
-            {
-                /// classic deserialization of non-positioned phylo k-mers
-                auto branch = i2l::phylo_kmer::na_branch;
-                auto score = i2l::phylo_kmer::na_score;
-                ar & branch & score;
 
-                /// if the database has positions, read and ignore them
-                if (version == i2l::protocol::v0_2_WITH_POSITIONS)
+        if (version < i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
+        {
+            const auto user_threshold = i2l::score_threshold(db.omega(), db.kmer_size());
+
+            /// v0.4.0 and earlier: load all unordered k-mers
+            for (size_t i = 0; i < table_size; ++i)
+            {
+                auto key = i2l::phylo_kmer::na_key;
+                size_t entries_size = 0;
+                float filter_value = 0.0f;
+
+                ar & key;
+                ar & entries_size;
+                ar & filter_value;
+
+                for (size_t j = 0; j < entries_size; ++j)
                 {
-                    auto position = i2l::phylo_kmer::na_pos;
-                    ar & position;
+                    /// classic deserialization of non-positioned phylo k-mers
+                    auto branch = i2l::phylo_kmer::na_branch;
+                    auto score = i2l::phylo_kmer::na_score;
+                    ar & branch & score;
+
+                    /// if the database has positions, read and ignore them
+                    if (version == i2l::protocol::v0_4_1_WITH_POSITIONS)
+                    {
+                        auto position = i2l::phylo_kmer::na_pos;
+                        ar & position;
+                    }
+
+                    /// Ignore scores lower then the user threshold
+                    if (score > user_threshold)
+                    {
+                        db.unsafe_insert(key, { branch, score });
+                    }
                 }
-                db.unsafe_insert(key, { branch, score });
             }
         }
+        else
+        {
+            /// Load ordered k-mers with dynamic mu and omega
+            for (size_t i = 0; i < table_size; ++i)
+            {
+                auto key = i2l::phylo_kmer::na_key;
+                size_t entries_size = 0;
+                float filter_value;
+                ar & key;
+                ar & entries_size;
+                ar & filter_value;
+
+                for (size_t j = 0; j < entries_size; ++j)
+                {
+                    /// classic deserialization of non-positioned phylo k-mers
+                    auto branch = i2l::phylo_kmer::na_branch;
+                    auto score = i2l::phylo_kmer::na_score;
+                    ar & branch & score;
+
+                    /// if the database has positions, read and ignore them
+                    if (version == i2l::protocol::v0_4_1_WITH_POSITIONS)
+                    {
+                        auto position = i2l::phylo_kmer::na_pos;
+                        ar & position;
+                    }
+                    db.unsafe_insert(key, { branch, score });
+                }
+            }
+        }
+
     }
 
     // split non-intrusive serialization function member into separate
