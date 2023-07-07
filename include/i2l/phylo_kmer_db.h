@@ -320,6 +320,12 @@ namespace i2l
             {
                 return std::distance(_begin, _end);
             }
+
+            [[nodiscard]]
+            const typename const_iterator::value_type& operator[](size_t i) const
+            {
+                return *(_begin + i);
+            }
         private:
             const_iterator _begin;
             const_iterator _end;
