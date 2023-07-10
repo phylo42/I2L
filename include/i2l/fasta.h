@@ -42,8 +42,6 @@ namespace i2l::io
         private:
             void _read_batch();
 
-            //bio::mapped_file_source _mmap;
-            //bio::stream<bio::mapped_file_source> _is;
             std::ifstream _is;
 
             /// current batch of sequences
@@ -60,6 +58,8 @@ namespace i2l::io
 
             /// Indicates if we need to clean sequences on-the-fly with i2l::clean_sequence
             bool _clean_sequences;
+
+            size_t _bytes_read;
         };
     }
 
@@ -91,6 +91,8 @@ namespace i2l::io
         batch_fasta(const std::string& filename, size_t batch_size = 1024, bool clean_sequences = true);
 
         std::vector<seq_record> next_batch();
+
+        size_t bytes_read() const;
     private:
         impl::fasta_iterator _it;
     };

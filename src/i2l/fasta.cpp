@@ -12,14 +12,13 @@ using std::move;
 //------------------------------------------------------------------------------------
 
 impl::fasta_iterator::fasta_iterator(const std::string& filename, size_t batch_size, bool clean_sequences)
-    //: _mmap{ filename }
-    //, _is{ _mmap, std::ios::in }
     : _is{ filename, std::ios::in }
     , _batch_size{ batch_size }
     , _seq_id{ 0 }
     , _global_seq_id{ 0 }
     , _last_batch{ false }
     , _clean_sequences{ clean_sequences }
+    , _bytes_read(0)
 {
     /// end() iterator
     if (_batch_size == 0)
@@ -88,6 +87,7 @@ void impl::fasta_iterator::_read_batch()
     size_t i = 0;
     while ((i < _batch_size) && std::getline(_is, line))
     {
+        _bytes_read += line.size();
         if (boost::starts_with(line, ">"))
         {
             if (!sequence.empty())
@@ -157,6 +157,11 @@ std::vector<i2l::seq_record> batch_fasta::next_batch()
     auto batch = std::move(_it._seqs);
     _it._read_batch();
     return batch;
+}
+
+size_t batch_fasta::bytes_read() const
+{
+    return _it._bytes_read;
 }
 
 string i2l::io::remove_whitespaces(string sequence)
