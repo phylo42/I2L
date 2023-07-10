@@ -193,6 +193,18 @@ namespace boost::serialization
         }
     }
 
+    template<class Database>
+    inline size_t get_num_entries(const Database& db)
+    {
+        size_t num_entries = 0;
+        for (const auto& [kmer, entries] : db)
+        {
+            (void)kmer;
+            num_entries += entries.size();
+        }
+        return num_entries;
+    }
+
     /// Type-agnostic save. Used for both positioned and unpositioned databases
     template<class Archive, class Database>
     inline void save(Archive& ar, const Database& db, unsigned int /*version*/)
@@ -219,7 +231,7 @@ namespace boost::serialization
         size_t num_kmers = db.size();
         ar & num_kmers;
 
-        size_t num_entries = 0;
+        size_t num_entries = get_num_entries(db);
         ar & num_entries;
 
         if (!db.kmer_order.empty())
@@ -259,21 +271,6 @@ namespace boost::serialization
     void load_entry(Archive& ar, i2l::unpositioned_pkdb_value& entry)
     {
         ar & entry.branch & entry.score;
-    }
-
-    template <class T>
-    T na_phylo_kmer();
-
-    template<>
-    i2l::positioned_pkdb_value na_phylo_kmer()
-    {
-        return { i2l::phylo_kmer::na_branch, i2l::phylo_kmer::na_score, i2l::phylo_kmer::na_pos };
-    }
-
-    template<>
-    i2l::unpositioned_pkdb_value na_phylo_kmer()
-    {
-        return { i2l::phylo_kmer::na_branch, i2l::phylo_kmer::na_score };
     }
 
     template<class Archive, class Database>
@@ -343,7 +340,7 @@ namespace boost::serialization
                 for (size_t j = 0; j < entries_size; ++j)
                 {
                     /// classic deserialization of non-positioned phylo k-mers
-                    auto entry = na_phylo_kmer<typename Database::pkdb_value_type>();
+                    auto entry = i2l::na_phylo_kmer<typename Database::pkdb_value_type>();
                     load_entry(ar, entry);
                     db.unsafe_insert(key, entry);
                 }
@@ -353,7 +350,6 @@ namespace boost::serialization
         {
             const auto user_threshold = std::log10(i2l::score_threshold(db.omega(), db.kmer_size()));
             const auto user_mu = db.get_mu();
-            double fv_sum = 0.0f;
             const auto max_entries_allowed = user_mu * num_entries;
 
             /// Load ordered k-mers with dynamic mu and omega
@@ -370,17 +366,12 @@ namespace boost::serialization
                 for (size_t j = 0; j < entries_size; ++j)
                 {
                     /// classic deserialization of non-positioned phylo k-mers
-                    auto entry = na_phylo_kmer<typename Database::pkdb_value_type>();
+                    auto entry = i2l::na_phylo_kmer<typename Database::pkdb_value_type>();
                     load_entry(ar, entry);
 
                     if (entry.score >= user_threshold)
                     {
                         db.unsafe_insert(key, entry);
-
-                        if (entries_added == 0)
-                        {
-                            fv_sum += filter_value;
-                        }
                         entries_added++;
                     }
                 }

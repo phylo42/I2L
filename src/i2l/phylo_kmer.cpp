@@ -49,6 +49,19 @@ unpositioned_phylo_kmer i2l::make_phylo_kmer(phylo_kmer::key_type key, phylo_kme
     return { key, score };
 }
 
+template<>
+i2l::positioned_pkdb_value i2l::na_phylo_kmer()
+{
+    return { i2l::phylo_kmer::na_branch, i2l::phylo_kmer::na_score, i2l::phylo_kmer::na_pos };
+}
+
+template<>
+i2l::unpositioned_pkdb_value i2l::na_phylo_kmer()
+{
+    return { i2l::phylo_kmer::na_branch, i2l::phylo_kmer::na_score };
+}
+
+
 bool i2l::operator==(const positioned_phylo_kmer& lhs, const positioned_phylo_kmer& rhs) noexcept
 {
     if (lhs.is_nan() || rhs.is_nan())

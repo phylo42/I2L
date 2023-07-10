@@ -131,6 +131,17 @@ namespace i2l
                                   phylo_kmer::pos_type position);
 
 
+    /// Create a "NaN valued" phylo-k-mer
+    template <typename PhyloKmerType>
+    PhyloKmerType na_phylo_kmer();
+
+    template<>
+    i2l::positioned_pkdb_value na_phylo_kmer();
+
+    template<>
+    i2l::unpositioned_pkdb_value na_phylo_kmer();
+
+
     bool operator==(const positioned_phylo_kmer& lhs, const positioned_phylo_kmer& rhs) noexcept;
     bool operator==(const unpositioned_phylo_kmer& lhs, const unpositioned_phylo_kmer& rhs) noexcept;
 
