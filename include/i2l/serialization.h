@@ -162,15 +162,6 @@ namespace boost::serialization
         i2l::phylo_kmer::score_type omega = db.omega();
         ar & omega;
 
-        /// Save the total information value
-        double total_information = 0.0;
-        for (const auto& [kmer, fv] : db.kmer_order)
-        {
-            (void)kmer;
-            total_information += fv;
-        }
-        ar & total_information;
-
         size_t table_size = db.size();
         ar & table_size;
 
@@ -231,15 +222,6 @@ namespace boost::serialization
 
         i2l::phylo_kmer::score_type omega = db.omega();
         ar & omega;
-
-        /// Save the total information value
-        double total_information = 0.0;
-        for (const auto& [kmer, fv] : db.kmer_order)
-        {
-            (void)kmer;
-            total_information += fv;
-        }
-        ar & total_information;
 
         /// The number of different k-mers
         size_t table_size = db.size();
@@ -349,14 +331,6 @@ namespace boost::serialization
             ar & omega;
             db.set_omega(omega);
 
-            /// Load the total information
-            double total_information = 0.0f;
-            (void)total_information;
-            if (version >= i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
-            {
-                ar & total_information;
-            }
-
             size_t table_size = 0;
             ar & table_size;
             for (size_t i = 0; i < table_size; ++i)
@@ -415,20 +389,13 @@ namespace boost::serialization
         ar & kmer_size;
         db.set_kmer_size(kmer_size);
 
+        i2l::phylo_kmer::score_type omega = 0;
+        ar & omega;
+
         /// Ignore omega if we want to dynamic load
         if (version < i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
         {
-            i2l::phylo_kmer::score_type omega = 0;
-            ar & omega;
             db.set_omega(omega);
-        }
-
-        /// Load the total information
-        double total_information = 0.0f;
-        (void)total_information;
-        if (version >= i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
-        {
-            ar & total_information;
         }
 
         size_t table_size = 0;
@@ -436,8 +403,6 @@ namespace boost::serialization
 
         if (version < i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
         {
-            const auto user_threshold = i2l::score_threshold(db.omega(), db.kmer_size());
-
             /// v0.4.0 and earlier: load all unordered k-mers
             for (size_t i = 0; i < table_size; ++i)
             {
@@ -462,20 +427,21 @@ namespace boost::serialization
                         auto position = i2l::phylo_kmer::na_pos;
                         ar & position;
                     }
-
-                    /// Ignore scores lower then the user threshold
-                    if (score > user_threshold)
-                    {
-                        db.unsafe_insert(key, { branch, score });
-                    }
+                    db.unsafe_insert(key, { branch, score });
                 }
             }
         }
         else
         {
+            const auto user_threshold = std::log10(i2l::score_threshold(db.omega(), db.kmer_size()));
+            const auto user_mu = db.get_mu();
+            double fv_sum = 0.0f;
+            size_t num_kmers_added = 0;
+
             /// Load ordered k-mers with dynamic mu and omega
             for (size_t i = 0; i < table_size; ++i)
             {
+                bool kmer_added = false;
                 auto key = i2l::phylo_kmer::na_key;
                 size_t entries_size = 0;
                 float filter_value;
@@ -496,7 +462,24 @@ namespace boost::serialization
                         auto position = i2l::phylo_kmer::na_pos;
                         ar & position;
                     }
-                    db.unsafe_insert(key, { branch, score });
+
+                    if (score >= user_threshold)
+                    {
+                        db.unsafe_insert(key, { branch, score });
+
+                        if (!kmer_added)
+                        {
+                            fv_sum += filter_value;
+                            kmer_added = true;
+
+                            if (fv_sum >= user_mu)
+                            {
+                                // stop reading the database
+                                i = table_size;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
