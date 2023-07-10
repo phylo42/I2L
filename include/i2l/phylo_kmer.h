@@ -88,7 +88,6 @@ namespace i2l
 
         _pkdb_value(phylo_kmer::branch_type _branch, phylo_kmer::score_type _score)
             : branch{ _branch }, score{ _score } {}
-
     };
 
     using positioned_pkdb_value = _pkdb_value<true>;
