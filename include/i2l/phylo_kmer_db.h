@@ -242,6 +242,17 @@ namespace i2l
         /// Determines the order in which k-mers are serialized.
         std::vector<kmer_fv> kmer_order;
 
+        void set_num_entries_loaded(size_t value)
+        {
+            _num_entries_loaded = value;
+        }
+
+        [[nodiscard]]
+        size_t get_num_entries_loaded() const
+        {
+            return _num_entries_loaded;
+        }
+
     private:
         storage _map;
 
@@ -280,6 +291,11 @@ namespace i2l
 
         /// The proportion of phylo-k-mers that have been loaded
         float _mu;
+
+        /// The total number of phylo-k-mer entries.
+        /// Deserialized from file, used only by EPIK
+        size_t _num_entries_loaded;
+        size_t _num_entries_total;
     };
 
     using phylo_kmer_db = _phylo_kmer_db<phylo_kmer>;

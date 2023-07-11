@@ -76,6 +76,10 @@ namespace i2l
 
     i2l::phylo_kmer_db load(const std::string& filename, float mu, float user_epsilon)
     {
+        std::cout << "Boost version: " << BOOST_VERSION / 100000 << "."
+                  << BOOST_VERSION / 100 % 1000 << "."
+                  << BOOST_VERSION % 100 << std::endl;
+
         if (!fs::exists(filename))
         {
             throw std::runtime_error("No such file: " + filename);
@@ -116,6 +120,10 @@ namespace i2l
 
     void save(const i2l::phylo_kmer_db& db, const std::string& filename, bool uncompressed=false)
     {
+        std::cout << "Boost version: " << BOOST_VERSION / 100000 << "."
+                  << BOOST_VERSION / 100 % 1000 << "."
+                  << BOOST_VERSION % 100 << std::endl;
+
         if (uncompressed)
         {
             save_uncompressed(db, filename);
@@ -324,6 +332,9 @@ namespace boost::serialization
         size_t num_entries = 0;
         ar & num_entries;
 
+        /// The total number of phylo-k-mer pairs loaded from disk
+        size_t num_pk_loaded = 0;
+
         if (version < i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
         {
             /// v0.4.0 and earlier: load all unordered k-mers
@@ -337,6 +348,7 @@ namespace boost::serialization
                 ar & entries_size;
                 ar & filter_value;
 
+
                 for (size_t j = 0; j < entries_size; ++j)
                 {
                     /// classic deserialization of non-positioned phylo k-mers
@@ -344,13 +356,14 @@ namespace boost::serialization
                     load_entry(ar, entry);
                     db.unsafe_insert(key, entry);
                 }
+                num_pk_loaded += entries_size;
             }
         }
         else
         {
             const auto user_threshold = std::log10(i2l::score_threshold(db.omega(), db.kmer_size()));
             const auto user_mu = db.get_mu();
-            const auto max_entries_allowed = user_mu * num_entries;
+            const auto max_pk_allowed = user_mu * num_entries;
 
             /// Load ordered k-mers with dynamic mu and omega
             for (size_t i = 0; i < num_kmers; ++i)
@@ -362,7 +375,6 @@ namespace boost::serialization
                 ar & entries_size;
                 ar & filter_value;
 
-                size_t entries_added = 0;
                 for (size_t j = 0; j < entries_size; ++j)
                 {
                     /// classic deserialization of non-positioned phylo k-mers
@@ -372,17 +384,18 @@ namespace boost::serialization
                     if (entry.score >= user_threshold)
                     {
                         db.unsafe_insert(key, entry);
-                        entries_added++;
+                        num_pk_loaded++;
                     }
                 }
 
                 // stop reading the database
-                if (entries_added >= max_entries_allowed)
+                if (num_pk_loaded >= max_pk_allowed)
                 {
                     break;
                 }
             }
         }
+        db.set_num_entries_loaded(num_pk_loaded);
     }
 
     template<class Archive>
