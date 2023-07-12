@@ -72,6 +72,12 @@ namespace i2l
         phylo_kmer::score_type score;
         phylo_kmer::pos_type position;
 
+        _pkdb_value()
+            : branch{ i2l::phylo_kmer::na_branch }
+            , score{ i2l::phylo_kmer::na_score }
+            , position { i2l::phylo_kmer::na_pos }
+        {}
+
         _pkdb_value(phylo_kmer::branch_type _branch, phylo_kmer::score_type _score,
                     phylo_kmer::pos_type _position)
             : branch{ _branch }
@@ -86,8 +92,13 @@ namespace i2l
         phylo_kmer::branch_type branch;
         phylo_kmer::score_type score;
 
+        _pkdb_value()
+            : branch{ i2l::phylo_kmer::na_branch }, score{ i2l::phylo_kmer::na_score }
+        {}
+
         _pkdb_value(phylo_kmer::branch_type _branch, phylo_kmer::score_type _score)
-            : branch{ _branch }, score{ _score } {}
+            : branch{ _branch }, score{ _score }
+        {}
     };
 
     using positioned_pkdb_value = _pkdb_value<true>;

@@ -61,7 +61,7 @@ namespace i2l
 
         /// \brief Returns the sequence type: DNA or Protein
         [[nodiscard]]
-        std::string_view sequence_type() const noexcept
+        const std::string& sequence_type() const noexcept
         {
             return _sequence_type;
         }
@@ -109,7 +109,8 @@ namespace i2l
 
         /// \brief Returns a view to the newick formatted phylogenetic tree
         [[nodiscard]]
-        std::string_view tree() const noexcept
+        //std::string_view tree() const noexcept
+        const std::string& tree() const noexcept
         {
             return _tree;
         }
@@ -120,7 +121,7 @@ namespace i2l
         }
 
         [[nodiscard]]
-        std::vector<phylo_node::node_index> tree_index() const noexcept
+        const std::vector<phylo_node::node_index>& tree_index() const noexcept
         {
             return _tree_index;
         }
@@ -196,6 +197,12 @@ namespace i2l
         void unsafe_insert(key_type key, const pkdb_value_type& value)
         {
             _map[key].push_back(value);
+        }
+
+        /// Moves in a vector of branch-score pairs for the given key
+        void insert_vector(key_type key, value_type&& value)
+        {
+            _map[key] = std::move(value);
         }
 
         /// \brief Replace a phylo-kmer in the database.

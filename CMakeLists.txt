@@ -21,7 +21,7 @@ set(SOURCES
         src/i2l/phylo_tree.cpp include/i2l/phylo_tree.h
         src/i2l/seq.cpp include/i2l/seq.h
         src/i2l/seq_record.cpp include/i2l/seq_record.h
-        include/i2l/serialization.h
+        include/i2l/serialization.h src/i2l/serialization.cpp
         include/i2l/version.h)
 
 
