@@ -80,28 +80,6 @@ namespace i2l
         /// Total number of branch-score pairs
         size_t num_entries;
 
-        /*ipk_header(std::string _sequence_type,
-                   tree_index _index,
-                   std::string _tree,
-                   size_t _kmer_size,
-                   i2l::phylo_kmer::score_type _omega,
-                   size_t _num_kmers,
-                   size_t _num_entries)
-            : sequence_type(std::move(_sequence_type))
-            , index(std::move(_index))
-            , tree(std::move(_tree))
-            , kmer_size(_kmer_size)
-            , omega(_omega)
-            , num_kmers(_num_kmers)
-            , num_entries(_num_entries)
-        {}
-
-        ipk_header(const ipk_header&) = delete;
-        ipk_header(ipk_header&&) noexcept = default;
-        ipk_header& operator=(const ipk_header&) = delete;
-        ipk_header& operator=(ipk_header&&) noexcept = default;
-        ~ipk_header() noexcept = default;*/
-
         template<class Archive>
         void serialize(Archive & ar, const unsigned int /*version*/)
         {
@@ -247,6 +225,9 @@ namespace i2l
         db.set_kmer_size(header.kmer_size);
         db.set_omega(header.omega);
 
+        /// The total number of phylo-k-mer pairs loaded from disk
+        size_t num_pk_loaded = 0;
+
         if (version < i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
         {
             /// v0.4.0 and earlier: load all unordered k-mers
@@ -256,6 +237,7 @@ namespace i2l
                 size_t entries_size = 0;
                 float filter_value = 0.0f;
 
+
                 ar & key & filter_value & entries_size;
                 for (size_t j = 0; j < entries_size; ++j)
                 {
@@ -264,13 +246,14 @@ namespace i2l
                     ar & entry;
                     db.unsafe_insert(key, entry);
                 }
+                num_pk_loaded += entries_size;
             }
         }
         else
         {
             const auto user_threshold = std::log10(i2l::score_threshold(db.omega(), db.kmer_size()));
             const auto user_mu = db.get_mu();
-            const auto max_entries_allowed = user_mu * header.num_entries;
+            const auto max_pk_allowed = user_mu * header.num_entries;
 
             /// Load ordered k-mers with dynamic mu and omega
             for (size_t i = 0; i < header.num_kmers; ++i)
@@ -280,7 +263,6 @@ namespace i2l
                 float filter_value;
                 ar & key & filter_value & entries_size;
 
-                size_t entries_added = 0;
                 for (size_t j = 0; j < entries_size; ++j)
                 {
                     /// classic deserialization of non-positioned phylo k-mers
@@ -290,17 +272,18 @@ namespace i2l
                     if (entry.score >= user_threshold)
                     {
                         db.unsafe_insert(key, entry);
-                        entries_added++;
+                        num_pk_loaded++;
                     }
                 }
 
                 // stop reading the database
-                if (entries_added >= max_entries_allowed)
+                if (num_pk_loaded >= max_pk_allowed)
                 {
                     break;
                 }
             }
         }
+        db.set_num_entries_loaded(num_pk_loaded);
     }
 
     /// Lazy deserializion of phylo-k-mer databases. Retrieves the next k-mer and the vector of

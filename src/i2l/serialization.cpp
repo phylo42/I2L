@@ -35,6 +35,10 @@ i2l::phylo_kmer_db i2l::load_uncompressed(const std::string& filename, float use
 
 i2l::phylo_kmer_db i2l::load(const std::string& filename, float mu, float user_epsilon)
 {
+    std::cout << "Boost version: " << BOOST_VERSION / 100000 << "."
+              << BOOST_VERSION / 100 % 1000 << "."
+              << BOOST_VERSION % 100 << std::endl;
+
     if (!fs::exists(filename))
     {
         throw std::runtime_error("No such file: " + filename);
