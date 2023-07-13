@@ -8,6 +8,8 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/string.hpp>
 #include <utility>
+#include <fstream>
+#include <memory>
 #include "phylo_kmer_db.h"
 #include "phylo_node.h"
 #include "version.h"
