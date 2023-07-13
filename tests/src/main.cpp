@@ -47,6 +47,7 @@ i2l::phylo_kmer_db create_db_from_map(const MapType& values, size_t kmer_size, i
         {
             db.unsafe_insert(key, { branch, score });
         }
+        db.kmer_order.push_back({ key, 0.0 });
     }
     return db;
 }

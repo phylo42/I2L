@@ -529,19 +529,16 @@ namespace i2l
 
             if (!a_current.is_valid() && !b_current.is_valid())
             {
-                std::cout << "Both dead" << std::endl;
                 return false;
             }
             // a goes before b as it has no current element
             if (!a_current.is_valid())
             {
-                std::cout << "A dead" << std::endl;
                 return true;
             }
             // b goes before a as it has no current element
             if (!b_current.is_valid())
             {
-                std::cout << "B dead" << std::endl;
                 return false;
             }
             return a_current.filter_value < b_current.filter_value;
