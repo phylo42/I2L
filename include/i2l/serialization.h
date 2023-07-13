@@ -41,10 +41,8 @@ namespace i2l
         static const unsigned int EARLIEST_INDEX = v0_4_0_WITHOUT_POSITIONS;
         static const unsigned int CURRENT = v0_4_1_WITHOUT_POSITIONS;
         static const unsigned int CURRENT_WITH_POSITIONS = CURRENT + 1;
-
-        static const unsigned int ERROR = 42;
-
 #endif
+        static const unsigned int ERROR = 42;
     };
 
     i2l::phylo_kmer_db load(const std::string& filename, float mu=1.0, float user_epsilon=0.0f);
@@ -265,8 +263,60 @@ namespace i2l
         }
 
         template<class Archive>
+        inline void load_content(Archive& ar,
+                                 i2l::_phylo_kmer_db<i2l::unpositioned_phylo_kmer>& db,
+                                 const unsigned int version, size_t table_size)
+        {
+            for (size_t i = 0; i < table_size; ++i)
+            {
+                auto key = i2l::phylo_kmer::na_key;
+                size_t entries_size = 0;
+                ar & key;
+                ar & entries_size;
+                for (size_t j = 0; j < entries_size; ++j)
+                {
+                    /// classic deserialization of non-positioned phylo k-mers
+                    auto branch = i2l::phylo_kmer::na_branch;
+                    auto score = i2l::phylo_kmer::na_score;
+                    ar & branch & score;
+
+                    /// if the database has positions, read and ignore them
+                    if (version == i2l::protocol::v0_2_WITH_POSITIONS)
+                    {
+                        auto position = i2l::phylo_kmer::na_pos;
+                        ar & position;
+                    }
+                    db.unsafe_insert(key, { branch, score });
+                }
+            }
+        }
+
+        template<class Archive>
+        inline void load_content(Archive& ar,
+                                 i2l::_phylo_kmer_db<i2l::positioned_phylo_kmer>& db,
+                                 const unsigned int version, size_t table_size)
+        {
+            (void)version;
+            for (size_t i = 0; i < table_size; ++i)
+            {
+                auto key = i2l::phylo_kmer::na_key;
+                size_t entries_size = 0;
+                ar & key;
+                ar & entries_size;
+                for (size_t j = 0; j < entries_size; ++j)
+                {
+                    auto branch = i2l::phylo_kmer::na_branch;
+                    auto score = i2l::phylo_kmer::na_score;
+                    auto position = i2l::phylo_kmer::na_pos;
+                    ar & branch & score & position;
+                    db.unsafe_insert(key, { branch, score, position });
+                }
+            }
+        }
+
+        template<class Archive, class Database>
         inline void load(Archive& ar,
-                         i2l::_phylo_kmer_db<i2l::unpositioned_phylo_kmer>& db,
+                         Database& db,
                          const unsigned int version)
         {
             db.set_version(version);
@@ -308,28 +358,8 @@ namespace i2l
 
             size_t table_size = 0;
             ar & table_size;
-            for (size_t i = 0; i < table_size; ++i)
-            {
-                auto key = i2l::phylo_kmer::na_key;
-                size_t entries_size = 0;
-                ar & key;
-                ar & entries_size;
-                for (size_t j = 0; j < entries_size; ++j)
-                {
-                    /// classic deserialization of non-positioned phylo k-mers
-                    auto branch = i2l::phylo_kmer::na_branch;
-                    auto score = i2l::phylo_kmer::na_score;
-                    ar & branch & score;
 
-                    /// if the database has positions, read and ignore them
-                    if (version == i2l::protocol::v0_2_WITH_POSITIONS)
-                    {
-                        auto position = i2l::phylo_kmer::na_pos;
-                        ar & position;
-                    }
-                    db.unsafe_insert(key, { branch, score });
-                }
-            }
+            load_content(ar, db, version, table_size);
         }
 
         template<class Archive>
