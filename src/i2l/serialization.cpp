@@ -71,6 +71,7 @@ i2l::phylo_kmer_db i2l::load_compressed(const std::string& filename, float user_
     db.set_mu(user_mu);
     unsigned int version = i2l::protocol::ERROR;
     ar & version;
+    db.set_version(version);
     load_db(ar, db, version);
     return db;
 }
@@ -84,6 +85,7 @@ i2l::phylo_kmer_db i2l::load_uncompressed(const std::string& filename, float use
     db.set_mu(user_mu);
     unsigned int version = i2l::protocol::ERROR;
     ar & version;
+    db.set_version(version);
     load_db(ar, db, version);
     return db;
 }
