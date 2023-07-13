@@ -3,6 +3,60 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <i2l/serialization.h>
 
+
+void print_boost_version()
+{
+    std::cout << "Boost version: " << BOOST_VERSION / 100000 << "."
+              << BOOST_VERSION / 100 % 1000 << "."
+              << BOOST_VERSION % 100 << std::endl;
+}
+
+namespace i2l::legacy
+{
+    i2l::phylo_kmer_db load_compressed(const std::string& filename)
+    {
+        std::ifstream ifs(filename);
+        boost::iostreams::filtering_istream in;
+        boost::iostreams::zlib_params zp(boost::iostreams::zlib::best_speed);
+        in.push(boost::iostreams::zlib_decompressor(zp));
+        in.push(ifs);
+
+        boost::archive::binary_iarchive ar(in);
+
+        i2l::phylo_kmer_db db { 0, 0.0, "", "" };
+        ar & db;
+        return db;
+    }
+
+    i2l::phylo_kmer_db load_uncompressed(const std::string& filename)
+    {
+        std::ifstream ifs(filename);
+        boost::archive::binary_iarchive ar(ifs);
+
+        i2l::phylo_kmer_db db { 0, 0.0, "", "" };
+        ar & db;
+        return db;
+    }
+
+    i2l::phylo_kmer_db load_pre_v4_1(const std::string& filename)
+    {
+        if (!fs::exists(filename))
+        {
+            throw std::runtime_error("No such file: " + filename);
+        }
+
+        try
+        {
+            return load_compressed(filename);
+        }
+        catch (const boost::iostreams::zlib_error& error)
+        {
+            return load_uncompressed(filename);
+        }
+    }
+}
+
+
 i2l::phylo_kmer_db i2l::load_compressed(const std::string& filename, float user_mu, float user_omega)
 {
     std::ifstream ifs(filename);
@@ -11,33 +65,32 @@ i2l::phylo_kmer_db i2l::load_compressed(const std::string& filename, float user_
     in.push(boost::iostreams::zlib_decompressor(zp));
     in.push(ifs);
 
-    boost::archive::binary_iarchive ia(in);
+    boost::archive::binary_iarchive ar(in);
 
     i2l::phylo_kmer_db db { 0, user_omega, "", "" };
     db.set_mu(user_mu);
-
-    ia & db;
+    unsigned int version = i2l::protocol::ERROR;
+    ar & version;
+    load_db(ar, db, version);
     return db;
 }
 
 i2l::phylo_kmer_db i2l::load_uncompressed(const std::string& filename, float user_mu, float user_omega)
 {
     std::ifstream ifs(filename);
-    boost::archive::binary_iarchive ia(ifs);
+    boost::archive::binary_iarchive ar(ifs);
 
     i2l::phylo_kmer_db db { 0, user_omega, "", "" };
     db.set_mu(user_mu);
-
-    ia & db;
+    unsigned int version = i2l::protocol::ERROR;
+    ar & version;
+    load_db(ar, db, version);
     return db;
 }
 
-
 i2l::phylo_kmer_db i2l::load(const std::string& filename, float mu, float user_epsilon)
 {
-    std::cout << "Boost version: " << BOOST_VERSION / 100000 << "."
-              << BOOST_VERSION / 100 % 1000 << "."
-              << BOOST_VERSION % 100 << std::endl;
+    print_boost_version();
 
     if (!fs::exists(filename))
     {
@@ -55,6 +108,12 @@ i2l::phylo_kmer_db i2l::load(const std::string& filename, float mu, float user_e
     {
         return i2l::load_uncompressed(filename, mu, user_epsilon);
     }
+    /// std::bad_alloc is thrown as format error if we try to
+    /// load old databases. Use legacy deserialization in this case
+    catch (const std::bad_alloc&)
+    {
+        return legacy::load_pre_v4_1(filename);
+    }
 }
 
 /// Archive-agnostic serialization of the database: write the header and the content.
@@ -62,7 +121,8 @@ i2l::phylo_kmer_db i2l::load(const std::string& filename, float mu, float user_e
 template<class Archive>
 void save_db(Archive& ar, const i2l::phylo_kmer_db& db)
 {
-    i2l::ipk_header header = {
+    /// Serialize the protocol header
+    const i2l::ipk_header header = {
         db.sequence_type(),
         db.tree_index(),
         db.tree(),
@@ -71,8 +131,9 @@ void save_db(Archive& ar, const i2l::phylo_kmer_db& db)
         db.size(),
         get_num_entries(db)
     };
-    ar & header;
+    save_header(ar, header);
 
+    /// Serialize content
     if (!db.kmer_order.empty())
     {
         save_filter_ordered_phylo_kmers(ar, db);
@@ -105,9 +166,7 @@ void i2l::save_uncompressed(const i2l::phylo_kmer_db& db, const std::string& fil
 
 void i2l::save(const i2l::phylo_kmer_db& db, const std::string& filename, bool uncompressed)
 {
-    std::cout << "Boost version: " << BOOST_VERSION / 100000 << "."
-              << BOOST_VERSION / 100 % 1000 << "."
-              << BOOST_VERSION % 100 << std::endl;
+    print_boost_version();
 
     if (uncompressed)
     {

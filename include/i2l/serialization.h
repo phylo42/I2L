@@ -42,10 +42,12 @@ namespace i2l
         static const unsigned int CURRENT = v0_4_1_WITHOUT_POSITIONS;
         static const unsigned int CURRENT_WITH_POSITIONS = CURRENT + 1;
 
+        static const unsigned int ERROR = 42;
+
 #endif
     };
 
-    i2l::phylo_kmer_db load(const std::string& filename, float mu, float user_epsilon);
+    i2l::phylo_kmer_db load(const std::string& filename, float mu=1.0, float user_epsilon=0.0f);
     i2l::phylo_kmer_db load_compressed(const std::string& filename, float user_mu, float user_omega);
     i2l::phylo_kmer_db load_uncompressed(const std::string& filename, float user_mu, float user_omega);
 
@@ -53,6 +55,7 @@ namespace i2l
     void save_compressed(const i2l::phylo_kmer_db& db, const std::string& filename);
     void save_uncompressed(const i2l::phylo_kmer_db& db, const std::string& filename);
 
+    using oarchive = boost::archive::binary_oarchive;
 
     /// Tree index: numbers of the nodes in the subtree for every node,
     //  the total branch lengths of subtrees
@@ -140,6 +143,23 @@ namespace i2l
         }
     }
 
+    /// Deserializes one phylo-k-mer while the on-demand deserialization.
+    /// Matches the protocol of save_filter_ordered_phylo_kmers (see below).
+    /// Both are needed (one for on-demand deserialization, another for
+    /// batched merge)
+    template<class Archive>
+    inline void save_phylo_kmer(Archive& ar, i2l::phylo_kmer::key_type key,
+                                i2l::phylo_kmer::score_type filter_value,
+                                const std::vector<pkdb_value>& entries)
+    {
+        size_t entries_size = entries.size();
+        ar & key & filter_value & entries_size;
+        for (const auto& entry: entries)
+        {
+            ar & entry;
+        }
+    }
+
     /// Saves k-mers with their filter values followed by vectors of scores.
     /// Introduced in v0.4.1
     template<class Archive, class Database>
@@ -158,6 +178,18 @@ namespace i2l
                 ar & entry;
             }
         }
+    }
+
+    template<class Archive>
+    inline void save_header(Archive& ar, const i2l::ipk_header& header)
+    {
+        /// Serialize the protocol version. It is not saved by Boost because
+        /// our serialization of i2l::phylo_kmer_db is not canonically defined
+        unsigned int version = i2l::protocol::CURRENT;
+        ar & version;
+
+        /// Serialize the header
+        ar & header;
     }
 
     /// Saves k-mers with their vectors of scores in a random order. Pre-v0.4.1
@@ -213,44 +245,137 @@ namespace i2l
         }
     }
 
-    template<class Archive, class Database>
-    inline void load_db(Archive& ar, Database& db, const unsigned int version)
+    namespace legacy
     {
-        ipk_header header;
-        ar & header;
-
-        db.set_sequence_type(header.sequence_type);
-        db.set_tree_index(std::move(header.index));
-        db.set_tree(std::move(header.tree));
-        db.set_kmer_size(header.kmer_size);
-        db.set_omega(header.omega);
-
-        /// The total number of phylo-k-mer pairs loaded from disk
-        size_t num_pk_loaded = 0;
-
-        if (version < i2l::protocol::v0_4_1_WITHOUT_POSITIONS)
+        /// Loads the tree index: the number of the nodes in the subtree for every node,
+        ///     the total branch length in the subtree
+        template<class Archive>
+        std::vector<i2l::phylo_node::node_index> load_tree_index(Archive& ar)
         {
-            /// v0.4.0 and earlier: load all unordered k-mers
-            for (size_t i = 0; i < header.num_kmers; ++i)
+            size_t num_nodes;
+            ar & num_nodes;
+
+            std::vector<i2l::phylo_node::node_index> index(num_nodes);
+            for (size_t i = 0; i < num_nodes; ++i)
+            {
+                ar & index[i].subtree_num_nodes;
+                ar & index[i].subtree_total_length;
+            }
+            return index;
+        }
+
+        template<class Archive>
+        inline void load(Archive& ar,
+                         i2l::_phylo_kmer_db<i2l::unpositioned_phylo_kmer>& db,
+                         const unsigned int version)
+        {
+            db.set_version(version);
+
+            /// Early versions are not supported
+            if (version < i2l::protocol::v0_1_x)
+            {
+                throw std::runtime_error("Failed to load database: this database was built with older version of IPK.");
+            }
+
+            db.set_positions_loaded(false);
+
+            /// Deserialization of the content added in versions v0.2.x
+            if (version > i2l::protocol::v0_1_x)
+            {
+                std::string sequence_type;
+                ar & sequence_type;
+                db.set_sequence_type(std::move(sequence_type));
+            }
+
+            /// Deserialization of the tree index, v0.3.2 and later
+            if (version >= i2l::protocol::v0_4_0_WITHOUT_POSITIONS)
+            {
+                auto tree_index = load_tree_index(ar);
+                db.set_tree_index(std::move(tree_index));
+            }
+
+            std::string tree;
+            ar & tree;
+            db.set_tree(std::move(tree));
+
+            size_t kmer_size = 0;
+            ar & kmer_size;
+            db.set_kmer_size(kmer_size);
+
+            i2l::phylo_kmer::score_type omega = 0;
+            ar & omega;
+            db.set_omega(omega);
+
+            size_t table_size = 0;
+            ar & table_size;
+            for (size_t i = 0; i < table_size; ++i)
             {
                 auto key = i2l::phylo_kmer::na_key;
                 size_t entries_size = 0;
-                float filter_value = 0.0f;
-
-
-                ar & key & filter_value & entries_size;
+                ar & key;
+                ar & entries_size;
                 for (size_t j = 0; j < entries_size; ++j)
                 {
                     /// classic deserialization of non-positioned phylo k-mers
-                    auto entry = i2l::na_phylo_kmer<typename Database::pkdb_value_type>();
-                    ar & entry;
-                    db.unsafe_insert(key, entry);
+                    auto branch = i2l::phylo_kmer::na_branch;
+                    auto score = i2l::phylo_kmer::na_score;
+                    ar & branch & score;
+
+                    /// if the database has positions, read and ignore them
+                    if (version == i2l::protocol::v0_2_WITH_POSITIONS)
+                    {
+                        auto position = i2l::phylo_kmer::na_pos;
+                        ar & position;
+                    }
+                    db.unsafe_insert(key, { branch, score });
                 }
-                num_pk_loaded += entries_size;
             }
+        }
+
+        template<class Archive>
+        void load_entry(Archive& ar, i2l::positioned_pkdb_value& entry)
+        {
+            ar & entry.branch & entry.score & entry.position;
+        }
+
+        template<class Archive>
+        void load_entry(Archive& ar, i2l::unpositioned_pkdb_value& entry)
+        {
+            ar & entry.branch & entry.score;
+        }
+    }
+
+    template<class Archive, class Database>
+    inline void load_db(Archive& ar, Database& db, unsigned int version)
+    {
+        /// Version is not written in the latest protocol. See save_db()
+        if (version == 0)
+        {
+            version = protocol::CURRENT;
+        }
+
+        /// Prior to v0.4.1, phylo-k-mers are deserialized in random order
+        if (version < protocol::v0_4_1_WITHOUT_POSITIONS)
+        {
+            legacy::load(ar, db, version);
         }
         else
         {
+            ipk_header header;
+            ar & header;
+
+            db.set_sequence_type(header.sequence_type);
+            db.set_tree_index(std::move(header.index));
+            db.set_tree(std::move(header.tree));
+            db.set_kmer_size(header.kmer_size);
+
+            if (db.omega() == 0.0f)
+            {
+                db.set_omega(header.omega);
+            }
+
+            /// The total number of phylo-k-mer pairs loaded from disk
+            size_t num_pk_loaded = 0;
             const auto user_threshold = std::log10(i2l::score_threshold(db.omega(), db.kmer_size()));
             const auto user_mu = db.get_mu();
             const auto max_pk_allowed = user_mu * header.num_entries;
@@ -282,8 +407,8 @@ namespace i2l
                     break;
                 }
             }
+            db.set_num_entries_loaded(num_pk_loaded);
         }
-        db.set_num_entries_loaded(num_pk_loaded);
     }
 
     /// Lazy deserializion of phylo-k-mer databases. Retrieves the next k-mer and the vector of
