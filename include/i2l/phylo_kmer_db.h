@@ -45,13 +45,14 @@ namespace i2l
 
         /// Ctors, dtor and operator=
         _phylo_kmer_db(size_t kmer_size, phylo_kmer::score_type omega, std::string seq_type,
-                       std::string tree)
+                       std::string tree, float mu=1.0f, size_t max_entries=std::numeric_limits<size_t>::max())
             : _kmer_size{ kmer_size }
             , _omega{ omega }
             , _sequence_type(std::move(seq_type))
             , _tree(std::move(tree))
             , _version(0)
-            , _mu(1)
+            , _max_entries(max_entries)
+            , _mu(mu)
         {}
         _phylo_kmer_db(const _phylo_kmer_db&) noexcept = delete;
         _phylo_kmer_db(_phylo_kmer_db&&) noexcept = default;
@@ -235,6 +236,11 @@ namespace i2l
             _version = version;
         }
 
+        void set_max_entries(size_t max_entries)
+        {
+            _max_entries = max_entries;
+        }
+
         void set_mu(float mu)
         {
             _mu = mu;
@@ -259,6 +265,25 @@ namespace i2l
         {
             return _num_entries_loaded;
         }
+
+        [[nodiscard]]
+        size_t get_num_max_entries() const
+        {
+            return _max_entries;
+        }
+
+        void set_num_total_entries(size_t value)
+        {
+            _num_entries_total = value;
+        }
+
+        [[nodiscard]]
+        size_t get_num_entries_total() const
+        {
+            return _num_entries_total;
+        }
+
+
 
     private:
         storage _map;
@@ -296,12 +321,17 @@ namespace i2l
         /// Serialization protocol version
         unsigned int _version;
 
-        /// The proportion of phylo-k-mers that have been loaded
+        /// Maximum number of phylo-k-mers allowed to load from disk
+        size_t _max_entries;
+
+        /// The value of mu used to load the database
         float _mu;
 
-        /// The total number of phylo-k-mer entries.
-        /// Deserialized from file, used only by EPIK
+        /// The total number of phylo-k-mer entries loaded from file, used only by EPIK
         size_t _num_entries_loaded;
+
+        /// The total number of phylo-k-mers that was in the file (not all might
+        /// have been loaded)
         size_t _num_entries_total;
     };
 
