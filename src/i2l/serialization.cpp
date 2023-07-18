@@ -506,6 +506,12 @@ namespace i2l
         }
 
         [[nodiscard]]
+        size_t get_num_kmers() const
+        {
+            return _header.num_kmers;
+        }
+
+        [[nodiscard]]
         const serialization_unit<Database>& current() const
         {
             return _current;
