@@ -17,6 +17,9 @@ namespace i2l
         class search_result<unpositioned_phylo_kmer>;
     }
 
+    /// A pair storing the information needed to evaluate a phylo k-mer by
+    /// the filtering function. "Value" is the value calculated by the filter
+    /// which is used to compare the informativeness of the k-mer against the others
     struct kmer_fv
     {
         i2l::phylo_kmer::key_type key;
@@ -25,6 +28,16 @@ namespace i2l
         kmer_fv(i2l::phylo_kmer::key_type k, float fv)
             : key(k), filter_value(fv)
         {}
+
+        inline bool operator<(const kmer_fv& rhs) const
+        {
+            return filter_value < rhs.filter_value;
+        }
+
+        inline bool operator>(const kmer_fv& rhs) const
+        {
+            return filter_value > rhs.filter_value;
+        }
     };
 
     /// \brief A phylo-kmer database that stores all phylo-kmers.
@@ -144,7 +157,6 @@ namespace i2l
         /// \details WARNING: This method does not know how the key was calculated. It is required
         /// to provide keys of substrings of size _kmer_size to get correct results.
         /// \sa _kmer_size
-
         [[nodiscard]]
         optional<impl::search_result<value_type>> search(key_type key) const noexcept
         {
@@ -170,6 +182,12 @@ namespace i2l
         const_iterator end() const noexcept
         {
             return std::end(_map);
+        }
+
+        /// \brief Searches for a key against the database. Throws if key not found
+        const value_type& at(key_type key) const
+        {
+            return _map.at(key);
         }
 
         /// Capacity

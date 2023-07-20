@@ -263,8 +263,8 @@ namespace i2l
 
     using batch_loader = lazy_load<phylo_kmer_db>;
 
-    /// "Less" comparator for batch loaders. Compares its top elements
-    /// if they have any. If one element is empty, it is "greater"
+    /// The "greater" comparator for batch loaders. Compares its top elements
+    /// if they have any. If one element is empty, it is "less"
     /// to push it away if used in the min-heap
     struct batch_loader_compare
     {
@@ -273,19 +273,20 @@ namespace i2l
             const auto& a_current = a->current();
             const auto& b_current = b->current();
 
+            // None > None
             if (!a_current.is_valid() && !b_current.is_valid())
             {
                 return true;
             }
-            // a goes before b as it has no current element
+            // None < value
             if (!a_current.is_valid())
             {
-                return true;
+                return false;
             }
-            // b goes before a as it has no current element
+            // value > None
             if (!b_current.is_valid())
             {
-                return false;
+                return true;
             }
             return a_current.filter_value > b_current.filter_value;
         }
