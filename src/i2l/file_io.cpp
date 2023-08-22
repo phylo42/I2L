@@ -68,15 +68,20 @@ void buffered_reader::_start_reading()
     _started = true;
 }
 
+#include <iostream>
+
 void buffered_reader::_read_next_chunk()
 {
+    std::cout << "_read_next_chunk" << std::endl;
     _buffer[0] = '\0';
 
     if (_read < _file_length)
     {
         std::streamsize size_to_read = std::min(_file_length - _read, static_cast<std::streamoff>(buffer_size - 1));
+        std::cout << "\treading " << size_to_read << std::endl;
         _stream.read(_buffer, size_to_read);
         _buffer[size_to_read] = '\0';
+        std::cout << "\t" << _buffer << std::endl;
         _read += size_to_read;
     }
 }
