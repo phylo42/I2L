@@ -312,7 +312,7 @@ namespace i2l {
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief A phylogenetic tree class
-    /// \defails phylo_tree is only constructable by the rappas::io::load_newick function.
+    /// \defails phylo_tree is only constructable by the i2l::io::load_newick function.
     /// Non-copyable. Phylo-nodes are not modifiable.
     /// \sa i2l::phylo_node, i2l::io::load_newick
     class phylo_tree

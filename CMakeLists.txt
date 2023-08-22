@@ -92,8 +92,8 @@ include(GNUInstallDirs)
 #include(CMakePackageConfigHelpers)
 
 # Exporting the core target
-# 'make install' to the correct locations (provided by GNUInstallDirs)
-# TODO: check if it works with 'make install'
+# 'make install' or `cmake --install` to the correct locations
+# (provided by GNUInstallDirs)
 install(TARGETS i2l_dna
         EXPORT i2lDnaTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -101,19 +101,12 @@ install(TARGETS i2l_dna
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-# Give CMake access to the version of the library
-#write_basic_package_version_file(
-#        xclDnaConfigVersion.cmake
-#        VERSION ${PACKAGE_VERSION}
-#        COMPATIBILITY AnyNewerVersion
-#)
-
-#install(TARGETS xcl_aa
-#        EXPORT xclAaTargets
-#        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(TARGETS i2l_aa
+        EXPORT i2lAaTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 #export(TARGETS i2l_dna i2l_aa ${HASH_MAP_EXPORT}
 export(TARGETS i2l_dna hopscotch_map #${HASH_MAP_EXPORT}
