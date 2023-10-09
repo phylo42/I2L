@@ -9,6 +9,7 @@ uintmax_t get_num_entries(const i2l::phylo_kmer_db& db)
 
     for (const auto& [key, entries] : db)
     {
+        (void)key;
         num_entries += entries.size();
     }
     return num_entries;

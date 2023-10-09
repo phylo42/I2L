@@ -32,16 +32,16 @@ namespace i2l
         static const unsigned int v0_4_0_WITHOUT_POSITIONS = 5;
         static const unsigned int v0_4_0_WITH_POSITIONS = v0_4_0_WITHOUT_POSITIONS + 1;
 
-        /// IPK v0.4.1, added kmer ordering and filter values
-        static const unsigned int v0_4_1_WITHOUT_POSITIONS = 7;
-        static const unsigned int v0_4_1_WITH_POSITIONS = v0_4_1_WITHOUT_POSITIONS + 1;
+        /// IPK v0.5.0, added kmer ordering and filter values
+        static const unsigned int v0_5_0_WITHOUT_POSITIONS = 7;
+        static const unsigned int v0_5_0_WITH_POSITIONS = v0_5_0_WITHOUT_POSITIONS + 1;
 
 #ifdef KEEP_POSITIONS
         static const unsigned int EARLIEST_INDEX = v0_4_0_WITH_POSITIONS;
         static const unsigned int CURRENT = v0_4_1_WITH_POSITIONS;
 #else
         static const unsigned int EARLIEST_INDEX = v0_4_0_WITHOUT_POSITIONS;
-        static const unsigned int CURRENT = v0_4_1_WITHOUT_POSITIONS;
+        static const unsigned int CURRENT = v0_5_0_WITHOUT_POSITIONS;
         static const unsigned int CURRENT_WITH_POSITIONS = CURRENT + 1;
 #endif
         static const unsigned int ERROR = 42;
@@ -532,8 +532,8 @@ namespace i2l
             version = protocol::CURRENT;
         }
 
-        /// Prior to v0.4.1, phylo-k-mers are deserialized in random order
-        if (version < protocol::v0_4_1_WITHOUT_POSITIONS)
+        /// Prior to v0.5.0, phylo-k-mers are deserialized in random order
+        if (version < protocol::v0_5_0_WITHOUT_POSITIONS)
         {
             legacy::load(ar, db, version);
         }
