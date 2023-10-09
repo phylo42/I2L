@@ -38,7 +38,7 @@ namespace i2l
 
 #ifdef KEEP_POSITIONS
         static const unsigned int EARLIEST_INDEX = v0_4_0_WITH_POSITIONS;
-        static const unsigned int CURRENT = v0_4_1_WITH_POSITIONS;
+        static const unsigned int CURRENT = v0_5_0_WITH_POSITIONS;
 #else
         static const unsigned int EARLIEST_INDEX = v0_4_0_WITHOUT_POSITIONS;
         static const unsigned int CURRENT = v0_5_0_WITHOUT_POSITIONS;
