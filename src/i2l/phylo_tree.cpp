@@ -4,6 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <algorithm>
 #include <fstream>
+#include <stdexcept>
 
 namespace fs = boost::filesystem;
 using namespace i2l;
