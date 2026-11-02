@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 4.1 FATAL_ERROR)
 
 # Create an executable target and set properties
 add_executable(i2l_example_tree EXCLUDE_FROM_ALL "")
@@ -8,7 +8,7 @@ target_sources(i2l_example_tree
         src/main.cpp
 )
 
-find_package(Boost REQUIRED COMPONENTS filesystem)
+find_package(Boost REQUIRED CONFIG COMPONENTS filesystem)
 
 target_link_libraries(i2l_example_tree
     PRIVATE

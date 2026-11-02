@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 4.1 FATAL_ERROR)
 
 # Create an executable target and set properties
 add_executable(i2l_example_stats EXCLUDE_FROM_ALL "")
