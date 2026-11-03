@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 4.1 FATAL_ERROR)
 project(I2L LANGUAGES CXX VERSION 0.4.0)
 
-find_package(Boost REQUIRED COMPONENTS serialization iostreams system filesystem)
-find_package(ZLIB)
+find_package(Boost REQUIRED CONFIG COMPONENTS serialization iostreams system filesystem)
+find_package(ZLIB REQUIRED)
 
 add_subdirectory(third-party)
 add_subdirectory(tests)
@@ -108,8 +108,6 @@ install(TARGETS i2l_aa
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-#export(TARGETS i2l_dna i2l_aa ${HASH_MAP_EXPORT}
-export(TARGETS i2l_dna hopscotch_map #${HASH_MAP_EXPORT}
-       FILE ${CMAKE_BINARY_DIR}/i2lConfig.cmake)
 
-export(PACKAGE i2l)
+install(EXPORT i2lDnaTargets NAMESPACE i2l:: DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/i2l)
+install(EXPORT i2lAaTargets NAMESPACE i2l:: DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/i2l)
